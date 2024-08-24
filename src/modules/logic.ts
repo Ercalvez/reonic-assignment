@@ -80,109 +80,116 @@ const DEFAULT_DEMAND_PROBABILITIES = [
     {
         km: 300, probability: 0.0294
     }
-]
+] as const;
 
 type ArrivalDistribution = (probability: number) => QUARTER; 
 
 type SimulationResult = {
-    totalConsumption: number
+    totalConsumption: number,
+    theoreticalMaxPower: number,
+    maxPower: number,
+    maxConcurrencyFactor: number,
+    averageConcurrencyFactor: number
 };
 
 /** Kwh / 100 KM */
 const DEFAULT_CONSUMPTION = 18;
 
-/** Kw*/
-const DEFAUL_CHARGING_POWER = 11
+/** Kw */
+const DEFAULT_CHARGING_POWER = 11
 
 export class ChargePointDataModel {
 
-    /**
-     * 
-     * @param probability between 0 and 1
-     * @returns exact quarter in the day (from 0 to 96)
-     */
-    public static defaultArrivalDistribution(probability: number): QUARTER {
-
-        if(probability < 0) {
-            throw "Probability cannot be negative: " +  probability;
-        }
-
-        if(probability > 1) {
-            throw "Probability cannot be above 1: " + probability;
-        }
-
-        let selectedHourIndex = null;
-
-        let cumulatedProbability = 0;
-
-        for(let i = 0; i < DEFAULT_ARRIVAL_PROBABILITIES.length; i++) {
-
-            const arrivalProbability = DEFAULT_ARRIVAL_PROBABILITIES[i].probability;
-
-            if(cumulatedProbability + arrivalProbability > probability) {
-                selectedHourIndex = i;
-                break;
-            }
-            cumulatedProbability += arrivalProbability;
-        }
-
-        if(selectedHourIndex == null) {
-            selectedHourIndex = DEFAULT_ARRIVAL_PROBABILITIES.length - 1;
-        }
-
-        const nextProbability = DEFAULT_ARRIVAL_PROBABILITIES[selectedHourIndex + 1]?.probability ?? DEFAULT_ARRIVAL_PROBABILITIES[selectedHourIndex].probability;
-
-        return DEFAULT_ARRIVAL_PROBABILITIES[selectedHourIndex].time * 4 + Math.floor(4 * (probability - cumulatedProbability) /  nextProbability);
+    private static sumTakenIntervals(intervals: {taken: boolean}[]) {
+        return intervals.reduce((sum, currentInterval) => sum + Number(currentInterval.taken), 0);
     }
 
     constructor(public readonly chargePoints: number) {
     }
 
-    public run() {
-        const chargePointQuarters: {taken: boolean}[][] = Array(this.chargePoints).fill(null).map(() => {
-            return Array(QUARTER_IN_A_DAY).fill(null).map(() => {
-            return {
-                taken: false
-            }
-        })});
+    public run(time?:{year: number, days: number}): SimulationResult {
 
-        for (let quarter = 0; quarter < QUARTER_IN_A_DAY; quarter++) {
-            
-            const hour = Math.floor(quarter / 4); 
-            // console.log(`${hour}:${(quarter - hour*4) * 15}`);
-            const {probability: quarterProbability} = DEFAULT_ARRIVAL_PROBABILITIES.find(({time}) => time === hour) ?? {};
-            if(quarterProbability == null) continue;
-            for(let chargingPointIndex = 0; chargingPointIndex < this.chargePoints; chargingPointIndex++) {
-                const arrivedProbability = Math.random();
-                if(arrivedProbability > quarterProbability) continue;
-                const demandProbability = Math.random();
-                let neededKm: KM = 0;
-                let cumulatedKmProbability = 0;
-                for (const {km, probability: kmProbability}  of DEFAULT_DEMAND_PROBABILITIES) {
-                    cumulatedKmProbability += kmProbability;
-                    if(cumulatedKmProbability >= demandProbability) {
-                        neededKm = km;
-                        break;
-                    }
-                }
-                // console.log("KM: ", neededKm);
-                const neededQuarters: QUARTER = Math.floor(4 * neededKm * DEFAULT_CONSUMPTION / (100 * DEFAUL_CHARGING_POWER));
-                // console.log("quarters: ", neededQuarters);
-                const chargingPoint = chargePointQuarters[chargingPointIndex];
+        const totalDays = time ? time.year + time.days : 365;
 
-                // if charging point is not available, look for the next charging point
-                if(chargingPoint[quarter].taken === true) {
-                    // console.log("TAKEN");
-                    continue;
-                }
-                // if available, take this spot and the next quarters
-                const chosenSpot = chargingPoint.slice(quarter, quarter + neededQuarters);
+        let totalConsumption = 0;
+        let maxPower = 0;
+        let aggregatedMaxPower = 0;
+
+        for(let day = 0; day < totalDays; day++) {
+            const chargePointQuarters: {taken: boolean}[][] = Array(this.chargePoints).fill(null)
+            .map(() => {
+                return Array(QUARTER_IN_A_DAY).fill(null)
+                        .map(() => {
+                            return {
+                                taken: false
+                            };
+                        });
+            });
+    
+            for (let quarter = 0; quarter < QUARTER_IN_A_DAY; quarter++) {
                 
-                chosenSpot.forEach(value => {
-                    value.taken = true;
-                })
+                const hour = Math.floor(quarter / 4); 
+                // console.log(`${hour}:${(quarter - hour*4) * 15}`);
+                const {probability: quarterProbability} = DEFAULT_ARRIVAL_PROBABILITIES.find(({time}) => time === hour) ?? {};
+                if(quarterProbability == null) continue;
+                for(let chargingPointIndex = 0; chargingPointIndex < this.chargePoints; chargingPointIndex++) {
+                    const arrivedProbability = Math.random();
+                    if(arrivedProbability > quarterProbability) continue;
+                    const demandProbability = Math.random();
+                    let neededKm: KM = 0;
+                    let cumulatedKmProbability = 0;
+                    for (const {km, probability: kmProbability}  of DEFAULT_DEMAND_PROBABILITIES) {
+                        cumulatedKmProbability += kmProbability;
+                        if(cumulatedKmProbability >= demandProbability) {
+                            neededKm = km;
+                            break;
+                        }
+                    }
+                    // console.log("KM: ", neededKm);
+                    const neededQuarters: QUARTER = Math.floor(4 * neededKm * DEFAULT_CONSUMPTION / (100 * DEFAULT_CHARGING_POWER));
+                    // console.log("quarters: ", neededQuarters);
+    
+                    // Look for any available charging point at this quarter (can be another one)
+                    const availableChargingPoint = chargePointQuarters.find(chargingPoint => chargingPoint[quarter].taken === false);
+                    if(availableChargingPoint == null) {
+                        continue;
+                    }
+
+                    // if available, take this spot and the next quarters
+                    const chosenSpot = availableChargingPoint.slice(quarter, quarter + neededQuarters);
+                    
+                    chosenSpot.forEach(value => {
+                        value.taken = true;
+                    })
+                }
             }
+            
+            totalConsumption += chargePointQuarters.reduce((sum, chargingPoint) => {
+                return sum + ChargePointDataModel.sumTakenIntervals(chargingPoint);
+            }, 0) * DEFAULT_CHARGING_POWER / 4;
+        
+            let maxNbUsedChargingPoint = 0;
+        
+            for(let quarter = 0; quarter < QUARTER_IN_A_DAY; quarter++) {
+                maxNbUsedChargingPoint = Math.max(maxNbUsedChargingPoint, ChargePointDataModel.sumTakenIntervals(chargePointQuarters.map(chargingStation => chargingStation[quarter])));
+            }
+
+            const maxPowerDay = maxNbUsedChargingPoint * DEFAULT_CHARGING_POWER;
+
+            aggregatedMaxPower += maxPowerDay;
+        
+            maxPower = Math.max(maxPowerDay, maxPower);
         }
-        return chargePointQuarters;
+
+        const theoreticalMaxPower = this.chargePoints * DEFAULT_CHARGING_POWER;
+
+        return {
+            totalConsumption,
+            theoreticalMaxPower,
+            maxPower,
+            maxConcurrencyFactor: maxPower / theoreticalMaxPower,
+            averageConcurrencyFactor: aggregatedMaxPower / (theoreticalMaxPower * totalDays)
+        };
+
     }
 }
