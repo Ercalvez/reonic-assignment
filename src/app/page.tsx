@@ -18,7 +18,7 @@ export default function Home() {
   }, [chargePoints, chargingPower, carConsumption, arrivalFactor]);
 
   return (
-    <main className="flex min-h-screen justify-between p-24">
+    <main className="flex min-h-screen p-8">
       <aside className="flex flex-col justify-around">
           <SimulationInput title="Chargepoints" inputValue = { chargePoints } setValue={setChargePoints} min={1} max={30}/>
           <SimulationInput title="Arrival Probability" inputValue = { arrivalFactor } unit = "%" setValue={setArrivalFactor} min={20} max={200}/>

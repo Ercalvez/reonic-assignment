@@ -1,4 +1,7 @@
 .simulation-input {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
     border-width: 3px;
     padding: 1em;
     border-radius: 1em;
@@ -7,4 +10,15 @@
 
 .simulation-input > h3 {
     font-weight: bold;
+}
+
+.simulation-input > input {
+    height: 1.5rem;
+    cursor: pointer;
+    -moz-appearance: none;
+    appearance: none;
+    -webkit-appearance: none;
+    border-radius: var(--rounded-box,1rem);
+    background-color: rgb(var(--foreground-rgb));
+
 }
