@@ -35,3 +35,10 @@ button {
     text-wrap: balance;
   }
 }
+
+@media (max-width: 1000px) {
+  main {
+    flex-direction: column;
+  }
+}
+

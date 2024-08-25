@@ -1,0 +1,58 @@
+.simulation-graph {
+    display: grid;
+    grid-template-rows: 1fr 80% 1fr 1fr;
+    grid-template-columns: 10% auto;
+}
+
+.simulation-graph .data-bar {
+    width: 3%;
+    height: 0;
+    transition: height 2s ease-in;
+}
+
+.simulation-graph > #data_bars {
+    grid-column: 2 / 2;
+    grid-row: 2 / 2;
+}
+
+.simulation-graph > #y_unit {
+    text-align: right;
+    grid-column: 1 / 1;
+    grid-row: 1 / 1;
+}
+
+.simulation-graph > #y_legend {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    grid-column: 1 / 1;
+    grid-row: 2 / 2;
+}
+
+.simulation-graph > #x_legend {
+    grid-column: 2 / 2;
+    grid-row: 3 / 3;
+}
+
+.simulation-graph > #concurrency_factor {
+    grid-column: 1 / 2;
+    grid-row: 4 / 4;
+}
+
+.simulation-graph .hour-label {
+    width: 3.25%;
+    text-align: center;
+    font-size: 0.8em;
+}
+
+@media (max-width: 1400px){
+    .simulation-graph .hour-label {
+        font-size: 0.6em;
+    }
+}
+
+@media (min-width: 1650px){
+    .simulation-graph .hour-label {
+        font-size: 1em;
+    }
+}

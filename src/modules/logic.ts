@@ -84,9 +84,10 @@ const DEFAULT_DEMAND_PROBABILITIES = [
 
 type ArrivalDistribution = (probability: number) => QUARTER; 
 
-type SimulationResult = {
+export type SimulationResult = {
     totalConsumption: number,
     theoreticalMaxPower: number,
+    powerPerHour: number[],
     maxPower: number,
     maxConcurrencyFactor: number,
     averageConcurrencyFactor: number
@@ -96,7 +97,7 @@ type SimulationResult = {
 const DEFAULT_CONSUMPTION = 18;
 
 /** Kw */
-const DEFAULT_CHARGING_POWER = 11
+const DEFAULT_CHARGING_POWER = 11;
 
 export class ChargePointDataModel {
 
@@ -104,19 +105,20 @@ export class ChargePointDataModel {
         return intervals.reduce((sum, currentInterval) => sum + Number(currentInterval.taken), 0);
     }
 
-    constructor(public readonly chargePoints: number) {
-    }
-
-    public run(time?:{year: number, days: number}): SimulationResult {
-
-        const totalDays = time ? time.year + time.days : 365;
+    public static run(chargePoints: number, options?: {chargingPower?: number, consumption?: number, arrivalFactor?: number, time?:{year: number, days: number}}): SimulationResult {
+        
+        const arrivalFactor = options?.arrivalFactor ?? 1;
+        const consumption = options?.consumption ?? DEFAULT_CONSUMPTION;
+        const chargingPower = options?.chargingPower ?? DEFAULT_CHARGING_POWER;
+        const totalDays = options?.time ? options.time.year + options.time.days : 365;
 
         let totalConsumption = 0;
         let maxPower = 0;
         let aggregatedMaxPower = 0;
+        const powerPerHour = Array(24).fill(0);
 
         for(let day = 0; day < totalDays; day++) {
-            const chargePointQuarters: {taken: boolean}[][] = Array(this.chargePoints).fill(null)
+            const chargePointQuarters: {taken: boolean}[][] = Array(chargePoints).fill(null)
             .map(() => {
                 return Array(QUARTER_IN_A_DAY).fill(null)
                         .map(() => {
@@ -130,9 +132,10 @@ export class ChargePointDataModel {
                 
                 const hour = Math.floor(quarter / 4); 
                 // console.log(`${hour}:${(quarter - hour*4) * 15}`);
-                const {probability: quarterProbability} = DEFAULT_ARRIVAL_PROBABILITIES.find(({time}) => time === hour) ?? {};
+                const arrivalInfo = DEFAULT_ARRIVAL_PROBABILITIES.find(({time}) => time === hour);
+                const quarterProbability = arrivalInfo ? arrivalFactor * arrivalInfo.probability : null;
                 if(quarterProbability == null) continue;
-                for(let chargingPointIndex = 0; chargingPointIndex < this.chargePoints; chargingPointIndex++) {
+                for(let chargingPointIndex = 0; chargingPointIndex < chargePoints; chargingPointIndex++) {
                     const arrivedProbability = Math.random();
                     if(arrivedProbability > quarterProbability) continue;
                     const demandProbability = Math.random();
@@ -146,7 +149,7 @@ export class ChargePointDataModel {
                         }
                     }
                     // console.log("KM: ", neededKm);
-                    const neededQuarters: QUARTER = Math.floor(4 * neededKm * DEFAULT_CONSUMPTION / (100 * DEFAULT_CHARGING_POWER));
+                    const neededQuarters: QUARTER = Math.floor(4 * neededKm * consumption / (100 * chargingPower));
                     // console.log("quarters: ", neededQuarters);
     
                     // Look for any available charging point at this quarter (can be another one)
@@ -166,26 +169,35 @@ export class ChargePointDataModel {
             
             totalConsumption += chargePointQuarters.reduce((sum, chargingPoint) => {
                 return sum + ChargePointDataModel.sumTakenIntervals(chargingPoint);
-            }, 0) * DEFAULT_CHARGING_POWER / 4;
+            }, 0) * chargingPower / 4;
         
-            let maxNbUsedChargingPoint = 0;
+            let maxNbChargePoint = 0;
         
             for(let quarter = 0; quarter < QUARTER_IN_A_DAY; quarter++) {
-                maxNbUsedChargingPoint = Math.max(maxNbUsedChargingPoint, ChargePointDataModel.sumTakenIntervals(chargePointQuarters.map(chargingStation => chargingStation[quarter])));
+                const quarterChargePoints = ChargePointDataModel.sumTakenIntervals(chargePointQuarters.map(chargingStation => chargingStation[quarter]));
+                const hour = Math.floor(quarter / 4);
+                if(powerPerHour[hour] != null) {
+                    powerPerHour[hour] += quarterChargePoints * chargingPower / 4;
+                }
+                else {
+                    console.error("This quarter does not match any valid hour: ", quarter, "hour:", hour);
+                }
+                maxNbChargePoint = Math.max(maxNbChargePoint, quarterChargePoints);
             }
 
-            const maxPowerDay = maxNbUsedChargingPoint * DEFAULT_CHARGING_POWER;
+            const maxPowerDay = maxNbChargePoint * chargingPower;
 
             aggregatedMaxPower += maxPowerDay;
         
             maxPower = Math.max(maxPowerDay, maxPower);
         }
 
-        const theoreticalMaxPower = this.chargePoints * DEFAULT_CHARGING_POWER;
+        const theoreticalMaxPower = chargePoints * chargingPower;
 
         return {
             totalConsumption,
             theoreticalMaxPower,
+            powerPerHour: powerPerHour.map(power => power / totalDays),
             maxPower,
             maxConcurrencyFactor: maxPower / theoreticalMaxPower,
             averageConcurrencyFactor: aggregatedMaxPower / (theoreticalMaxPower * totalDays)
