@@ -20,14 +20,17 @@ Task 1 logic is located in `src/modules/logic.ts`.
 It is called to run simulation for Task 2a. 
 
 It can be tested without frontend via the following command:
-`npx ts-node src/modules/main.ts`
+
+```bash
+npx ts-node src/modules/main.ts
+```
 
 ### Bonus question
 
 The concurrency factor seems to drop when the number of chargepoints increase.
 
 ### Hypothesis and limits
-- Intervals are split into quarters. A car stops charging at the end of a quarter.
+Intervals are split into quarters. A car stops charging at the end of a quarter.
 Hence, energy used to charge cars is rounded up. 
 
 
