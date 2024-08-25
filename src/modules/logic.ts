@@ -96,6 +96,7 @@ const DEFAULT_CHARGING_POWER = 11;
 
 export class ChargePointDataModel {
 
+    /** Returns the sums of all taken intervals (taken: 1, not taken: 0) */
     private static sumTakenIntervals(intervals: {taken: boolean}[]) {
         return intervals.reduce((sum, currentInterval) => sum + Number(currentInterval.taken), 0);
     }
@@ -157,7 +158,7 @@ export class ChargePointDataModel {
 
                     const neededQuarters: QUARTER = Math.floor(4 * neededKm * consumption / (100 * chargingPower));
     
-                    // Look for any available charging point at this quarter (can be another one)
+                    // Look for any available chargepoint at this quarter
                     const availableChargingPoint = chargePointQuarters.find(chargingPoint => chargingPoint[quarter].taken === false);
                     if(availableChargingPoint == null) {
                         continue;
