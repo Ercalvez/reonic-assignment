@@ -20,5 +20,6 @@
 }
 
 .simulation-graph .hour-label {
-    width: 3%;
+    width: 3.25%;
+    text-align: center;
 }
