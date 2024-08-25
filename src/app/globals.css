@@ -26,9 +26,6 @@ body {
     rgb(var(--background-start-rgb));
 }
 
-button {
-  width: max-content;
-}
 
 @layer utilities {
   .text-balance {

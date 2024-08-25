@@ -10,12 +10,19 @@
     transition: height 2s ease-in;
 }
 
+.data-bar:hover {
+    border-width: 3px;
+    border-color: var(--foreground-rgb);
+    transition: border-color .4s ease-in;
+}
+
 .simulation-graph > #data_bars {
     grid-column: 2 / 2;
     grid-row: 2 / 2;
 }
 
 .simulation-graph > #y_unit {
+    font-weight: bold;
     text-align: right;
     grid-column: 1 / 1;
     grid-row: 1 / 1;
@@ -24,6 +31,7 @@
 .simulation-graph > #y_legend {
     display: flex;
     flex-direction: column;
+    font-weight: bold;
     text-align: right;
     grid-column: 1 / 1;
     grid-row: 2 / 2;
@@ -34,15 +42,42 @@
     grid-row: 3 / 3;
 }
 
-.simulation-graph > #concurrency_factor {
-    grid-column: 1 / 2;
+.simulation-graph > #result_cards {
+    grid-column: 1 / span 2;
     grid-row: 4 / 4;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .simulation-graph .hour-label {
     width: 3.25%;
     text-align: center;
     font-size: 0.8em;
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+  }
+  
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: var(--background-start-rgb);
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    font-size: 1.2em;
+    font-weight: bold;
+
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+}
+  
+.tooltip:hover .tooltiptext {
+    visibility: visible;
 }
 
 @media (max-width: 1400px){

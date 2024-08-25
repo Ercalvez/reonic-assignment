@@ -1,0 +1,10 @@
+.simulation-input {
+    border-width: 3px;
+    padding: 1em;
+    border-radius: 1em;
+    border-color: var(--foreground-rgb);
+}
+
+.simulation-input > h3 {
+    font-weight: bold;
+}

@@ -1,5 +1,7 @@
 "use client";
 
+import "./SimulationInput.css";
+
 import { Dispatch, SetStateAction } from "react";
 
 interface SimulationInputProps { 
