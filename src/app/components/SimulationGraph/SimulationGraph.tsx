@@ -12,13 +12,13 @@ export default function SimulationGraph({powerPerHour, maxPower, averageConcurre
         <div className="simulation-graph">
             <div id="y_unit">{"kW"}</div>
             <div id="y_legend">
-                    <label style={{height: "50%"}}>{maxPower}</label>
-                    <label>{maxPower / 2} </label>
+                    <label suppressHydrationWarning style={{height: "50%"}}>{maxPower}</label>
+                    <label suppressHydrationWarning>{maxPower / 2} </label>
             </div>
             <div id="data_bars" className="flex flex-row justify-evenly items-end">
                 {hours.map(hour => {
-                    return <div className="tooltip data-bar bg-red-600" style={{height: 100 * powerPerHour[hour] / maxPower + "%"}} >
-                                <span className="tooltiptext">{powerPerHour[hour].toFixed(2) + "kW"}</span>
+                    return <div suppressHydrationWarning className="tooltip data-bar bg-red-600" style={{height: 100 * powerPerHour[hour] / maxPower + "%"}} >
+                                <span suppressHydrationWarning className="tooltiptext">{powerPerHour[hour].toFixed(2) + "kW"}</span>
                         </div>;
                 })}
             </div>

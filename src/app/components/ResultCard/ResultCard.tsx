@@ -6,7 +6,7 @@ export default function ResultCard({id, title, result, unit}: {id: string, title
     return (
         <div id={id} className="result-card">
             <h3 className="font-bold">{title}</h3>
-            <h4>{result.toFixed(2)} {unit ?? ""}</h4>
+            <h4 suppressHydrationWarning>{result.toFixed(2)} {unit ?? ""}</h4>
         </div>
     );
 }
