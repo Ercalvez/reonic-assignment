@@ -1,3 +1,5 @@
+"use client";
+
 import "./ResultCard.css"
 
 export default function ResultCard({id, title, result, unit}: {id: string, title: string, result: number, unit?: string}) {
