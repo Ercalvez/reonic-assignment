@@ -8,7 +8,7 @@
 .simulation-graph .data-bar {
     width: 3%;
     height: 0;
-    transition: height 2s ease-in;
+    transition: height 1.2s ease-in;
 }
 
 .data-bar:hover {
